@@ -1,24 +1,21 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from mycloud_api.views import login_user, register_user, FileViewSet, refresh_access_token
-from rest_framework_simplejwt import views as jwt_views
-from django.conf import settings
-from django.conf.urls.static import static
-from .views import upload_file
+from .views import UserViewSet, FileViewSet, login_user, register_user, download_file_by_special_link
 
-
-
+# Initialize the router and register the ViewSets for User and File
 router = DefaultRouter()
-router.register(r'files', FileViewSet, basename='file')
+router.register(r'users', UserViewSet)  # Registers the User ViewSet for user-related API endpoints
+router.register(r'files', FileViewSet, basename='files')  # Registers the File ViewSet for file-related API endpoints
 
+# Define the URL patterns
 urlpatterns = [
-    path('register/', register_user, name='register_user'),
-    path('login/', login_user, name='login_user'),
-    path('token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Для получения access токена
-    path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),  # Для обновления access токена
-    path('', include(router.urls)),  # Все маршруты, связанные с файлами, будут здесь 
-    path('refresh-token/', refresh_access_token, name='refresh-token'),  # Маршрут для обновления токена
-    path('api/files/upload/', upload_file, name='upload-file'),
-    
+    # Auth-related paths
+    path('auth/login/', login_user, name='login_user'),  # User login path
+    path('auth/register/', register_user, name='register_user'),  # User registration path
 
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # Download file by special link
+    path('download/<str:special_link>/', download_file_by_special_link, name='download_file'),  # File download path using special link
+
+    # Include the router URLs for the 'users' and 'files' endpoints
+    path('', include(router.urls)),  # This will automatically include routes like /users/ and /files/
+]
