@@ -7,52 +7,51 @@ logger = logging.getLogger(__name__)
 
 class NoExpirationTokenAuthentication(BaseAuthentication):
     def authenticate(self, request):
-        # Исключаем проверку токена для страницы логина
-        if request.path == '/api/auth/login/':  # Укажите путь для вашего эндпоинта авторизации
-            return None  # Не нужно проверять токен для страницы логина
+        # Exclude token check for the login page
+        if request.path == '/api/auth/login/':  # Specify the path for your login endpoint
+            return None  # No token check needed for the login page
 
-        # Получаем заголовок авторизации
+        # Get the authorization header
         auth = self.get_authorization_header(request)
         if not auth:
             logger.warning("No authorization header found.")
-            return None  # Если заголовок отсутствует, то аутентификации нет
+            return None  # If the header is missing, there's no authentication
 
-        # Теперь не проверяем на "Bearer ", а сразу берем токен
-        token = auth.strip()  # Убираем лишние пробелы в начале и в конце
+        token = auth.strip()  # Remove any extra spaces at the beginning and end
 
-        # Проверяем наличие токена
+        # Check if the token exists
         if not token:
             logger.warning("Authorization header is empty.")
             raise AuthenticationFailed('No token provided.')
 
-        # Логируем токен (это поможет нам понять, что происходит)
+        # Log the token (this helps us understand what is going on)
         logger.debug("Received token: %s", token)
 
-        # Вставьте сюда вашу логику для проверки и извлечения пользователя из токена
+        # Insert your logic here to check and retrieve the user from the token
         user = self.get_user_from_token(token)
         if user is None:
             logger.error("Invalid token: %s", token)
             raise AuthenticationFailed('Invalid token.')
 
-        return (user, token)  # Возвращаем кортеж с пользователем и токеном
+        return (user, token)  # Return a tuple with the user and token
 
     def get_authorization_header(self, request):
         """
-        Возвращает значение заголовка Authorization.
+        Returns the value of the Authorization header.
         """
         auth = request.headers.get('Authorization')
         return auth
 
     def get_user_from_token(self, token):
         """
-        Логика для извлечения пользователя из токена.
-        Это нужно будет настроить в зависимости от вашего механизма токенов.
+        Logic for extracting the user from the token.
+        This will need to be adjusted depending on your token mechanism.
         """
         try:
-            # Ищем токен в базе данных с помощью Token модели из DRF
+            # Look for the token in the database using DRF's Token model
             token_instance = Token.objects.get(key=token)
             logger.debug("Found user: %s for token: %s", token_instance.user.username, token)
-            return token_instance.user  # Возвращаем пользователя, связанного с токеном
+            return token_instance.user  # Return the user associated with the token
         except Token.DoesNotExist:
             logger.error("Token not found: %s", token)
             return None
